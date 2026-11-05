@@ -1,5 +1,5 @@
 # Bosch dataset (911 MB): never commit, see README for how to get it
-CNC_Machining-main/
+data/CNC_Machining/
 *.h5
 
 # Python
