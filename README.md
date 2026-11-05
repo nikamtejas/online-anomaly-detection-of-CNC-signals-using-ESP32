@@ -45,6 +45,14 @@ The ESP32 smoke test is still open, because the board isn't connected yet. So is
 
 The models rank recordings fairly well but aren't usable as alarms yet. At 1% false positives they catch almost no bad recordings, and 2.07% of normal test windows pass the Mahalanobis threshold, twice the 1% target. False alarms are counted before alarm smoothing, which comes in Week 3.
 
+### Week 2: why recall is zero
+
+1. Six normal recordings take ranks 1 to 6 under Mahalanobis, and all six are M01 OP13 from 2021-02. With 452 normal test recordings, 1% FPR allows 4 false positives, so these six alone push recall to 0.
+2. They differ from the other nine good recordings in that group. Their strongest Y peak sits at 947 to 992 Hz instead of 338 Hz, and their Y RMS is 595 to 722 counts instead of 170 to 184. In the 562 to 1000 Hz band they are 8.4 to 12.8 dB above the M01 OP13 training recordings.
+3. I can't say whether they are mislabelled. The paper admits some labels are wrong (p. 134), but nothing here proves it for these files, and OP13 has no bad recordings on any machine to compare with. The labels stay as published, so the table above remains the official result.
+4. Leaving the six out moves Mahalanobis PR-AUC from 0.276 to 0.561 and recall at 1% FPR from 0 to 0.471. RMS and PCA move the same way. I picked the six after looking at the test set, so this explains the result and doesn't improve it.
+5. False alarms aren't evenly spread either. OP13 has 10.51% of its normal windows above the threshold, and no other operation passes 4.07%. The rate rises from 1.67% in 2021-02 to 3.19% in 2021-08. The last tenth of a recording holds 25.3% of them and the first tenth 15.3%, where an even spread would give 10%.
+
 ## Data facts
 
 "README" here means `data/CNC_Machining/README.md`, and "data" means the output of `notebooks/analysis.ipynb`. Page numbers refer to the paper cited below.
