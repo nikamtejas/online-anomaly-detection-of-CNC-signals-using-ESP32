@@ -18,6 +18,12 @@ cd notebooks
 ../.venv/bin/jupyter nbconvert --to notebook --execute --inplace analysis.ipynb
 ```
 
+The firmware check needs MicroPython (`brew install micropython`) and runs from the repo root:
+
+```bash
+.venv/bin/python -m sim.run_sim
+```
+
 ## Progress
 
 ### Week 1: setup and data
@@ -29,7 +35,7 @@ cd notebooks
 5. I checked how the bad files were prepared, because the authors cut off their start and end during labelling (p. 135). They are a median of 0.82 times as long as good files in the same group and rarely contain idle windows. Scoring recordings only by "less idle means bad" already reaches AUROC 0.926, so the models need testing with idle windows removed.
 6. I checked the dataset facts against their sources. The results are in the table below.
 
-The ESP32 smoke test is still open, because the board isn't connected yet. So is the removal of the unused upstream files from the dataset folder.
+The ESP32 smoke test is still open, because the board isn't connected yet. I removed the unused upstream files from the dataset folder, so it now holds only the data, LICENSE and README.
 
 ### Week 2: models (first run)
 
@@ -52,6 +58,11 @@ The models rank recordings fairly well but aren't usable as alarms yet. At 1% fa
 3. I can't say whether they are mislabelled. The paper admits some labels are wrong (p. 134), but nothing here proves it for these files, and OP13 has no bad recordings on any machine to compare with. The labels stay as published, so the table above remains the official result.
 4. Leaving the six out moves Mahalanobis PR-AUC from 0.276 to 0.561 and recall at 1% FPR from 0 to 0.471. RMS and PCA move the same way. I picked the six after looking at the test set, so this explains the result and doesn't improve it.
 5. False alarms aren't evenly spread either. OP13 has 10.51% of its normal windows above the threshold, and no other operation passes 4.07%. The rate rises from 1.67% in 2021-02 to 3.19% in 2021-08. The last tenth of a recording holds 25.3% of them and the first tenth 15.3%, where an even spread would give 10%.
+
+### Week 3: simulation
+
+1. `firmware/features.py` computes the same 33 features in MicroPython. `sim/run_sim.py` feeds recorded samples through a ring buffer in the MicroPython Unix port and compares every window with `src/features.py`. I tested 362 windows: one good and one bad 2021 recording per machine, plus a flat signal. The largest differences were 0.00095 counts for RMS, 0 for peak-to-peak, 0.00016 for crest factor and 0.0000076 for log band energy.
+2. This doesn't settle everything about the chip. `emlearn_fft` has no build for my arm64 Mac, so the simulation uses a Python copy of its FFT. The Unix port also computes in 64-bit floats, while the ESP32 uses 32-bit, and laptop speed says nothing about the 128 ms budget. All three need the board in Week 4.
 
 ## Data facts
 
