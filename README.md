@@ -63,6 +63,8 @@ The models rank recordings fairly well but aren't usable as alarms yet. At 1% fa
 
 1. `firmware/features.py` computes the same 33 features in MicroPython. `sim/run_sim.py` feeds recorded samples through a ring buffer in the MicroPython Unix port and compares every window with `src/features.py`. I tested 362 windows: one good and one bad 2021 recording per machine, plus a flat signal. The largest differences were 0.00095 counts for RMS, 0 for peak-to-peak, 0.00016 for crest factor and 0.0000076 for log band energy.
 2. This doesn't settle everything about the chip. `emlearn_fft` has no build for my arm64 Mac, so the simulation uses a Python copy of its FFT. The Unix port also computes in 64-bit floats, while the ESP32 uses 32-bit, and laptop speed says nothing about the 128 ms budget. All three need the board in Week 4.
+3. `notebooks/04_simulation.ipynb` replays the 2021 test recordings (452 good, 17 bad) one after another, the way the board will get them. Only the periods have a known time order, so inside a period I sort by machine, operation and file number. I added rule 5: the alarm goes on only when 3 of the last 5 windows are above the threshold, and the count starts again with every recording.
+4. Rule 5 cuts false alarms from 581 to 438 per hour and raises window AUROC from 0.890 to 0.914. For whole recordings it doesn't help. AUROC falls from 0.893 to 0.878, recall at 1% FPR stays at 0, and 45% of normal recordings still get at least one alarm. 12 of the 17 bad recordings raise an alarm, a median 1.92 s after the file starts. The authors cut off the start of the bad files, so this isn't the delay from the start of the fault. `results/figures/score_over_time.png` shows one stream (M01, 2021-08).
 
 ## Data facts
 

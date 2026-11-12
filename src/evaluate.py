@@ -65,11 +65,11 @@ def evaluate(idx, scores):
     return dict(window=window, recording=recording)
 
 
-def log_row(step, name, level, m):
-    row = dict(date=datetime.date.today(), source='evaluate.py', step=step, split='time', level=level, model=name,
+def log_row(step, name, level, m, source='evaluate.py'):
+    row = dict(date=datetime.date.today(), source=source, step=step, split='time', level=level, model=name,
                features=33, quantization='float', SNR='', AUROC=round(m['AUROC'], 4), PR_AUC=round(m['PR_AUC'], 4),
                recall_at_1pct_FPR=round(m['recall'], 4), false_alarms_per_hour=round(m.get('false_alarms_per_hour', 0)) if level == 'window' else '',
-               detection_delay_s='', latency_ms='')
+               detection_delay_s=round(m['delay'], 2) if 'delay' in m else '', latency_ms='')
     new = not METRICS.exists()
     with METRICS.open('a', newline='') as f:
         out = csv.DictWriter(f, row.keys())

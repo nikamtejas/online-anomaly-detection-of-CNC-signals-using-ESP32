@@ -10,3 +10,6 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# Personal Claude rules, not part of the project
+CLAUDE.local.md
