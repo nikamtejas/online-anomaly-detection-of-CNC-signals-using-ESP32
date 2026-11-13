@@ -7,3 +7,7 @@ date,source,step,split,level,model,features,quantization,SNR,AUROC,PR_AUC,recall
 2026-11-13,03_models.ipynb,"day5 period centre, 5 s median",recording by period,recording,rms,12,float,,0.7963,,,31.8,5.5,
 2026-11-13,03_models.ipynb,"day5 period centre, 5 s median",recording by period,window,maha,12,float,,0.8898,0.8192,0.5291,,,
 2026-11-13,03_models.ipynb,"day5 period centre, 5 s median",recording by period,recording,maha,12,float,,0.7905,,,49.8,5.5,
+2026-11-13,03_models.ipynb,"day6 median-of-recordings threshold, 95% limit",recording by period,window,rms,12,float,,0.8567,0.8283,0.6312,,,
+2026-11-13,03_models.ipynb,"day6 median-of-recordings threshold, 95% limit",recording by period,recording,rms,12,float,,0.8648,,,186.2,5.5,
+2026-11-13,03_models.ipynb,"day6 median-of-recordings threshold, 95% limit",recording by period,window,maha,12,float,,0.9361,0.8621,0.5726,,,
+2026-11-13,03_models.ipynb,"day6 median-of-recordings threshold, 95% limit",recording by period,recording,maha,12,float,,0.8522,,,93.5,5.5,
