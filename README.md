@@ -13,7 +13,7 @@ Download the [Bosch dataset](https://github.com/boschresearch/CNC_Machining) and
 
 ## Scope
 
-I restarted the project on 2026-11-12 with a smaller scope: one machine (M01) and one operation (OP01). M01 OP01 has 38 good and 2 bad recordings, and both bad ones are from 2019. The earlier work on all machines is saved under the git tag `v0-all-machines`.
+I restarted the project on 2026-11-12 with a smaller scope: machine M01 only, and only the 13 operations that have both good and bad recordings. OP00 and OP13 have no bad recordings, so they can't show whether the model detects anything, and I left them out before training anything. That leaves 413 good and 34 bad recordings. OP01 (38 good, 2 bad) is the worked example. The earlier work on all machines is saved under the git tag `v0-all-machines`.
 
 ## Progress
 
@@ -22,6 +22,8 @@ I restarted the project on 2026-11-12 with a smaller scope: one machine (M01) an
 1. `notebooks/01_data.ipynb` compares each bad OP01 recording with the good ones from the same period (2019-02: 5 good, 2019-08: 14 good). Both bad recordings have a higher RMS than every good one on all three axes. The difference is small on X and large on Y and Z: Z is 224 to 242 counts in the bad files and 159 to 193 in the good ones.
 2. The extra energy sits around the 250 Hz spindle speed (paper, Table 1). The 200 to 400 Hz band is 5.1 to 8.7 dB higher in both bad files on every axis, and on Z the strongest peak moves to 246 to 248 Hz. So the machine shakes harder with every spindle turn. That fits an off-centre or unbalanced tool, but the data doesn't say what went wrong, so this is my reading and not a fact.
 3. The bad files are also shorter (19.5 and 23.5 s, against 27.6 to 32.3 s), because the authors cut their start and end (paper p. 135). No model may use the length. Y below 50 Hz is about 7.5 dB lower in the bad files, possibly because the start and end spikes of a run are missing. I haven't tested that yet.
+4. I ran the same comparison for every bad M01 recording (33 of 34; the OP10 one from 2021-08 has no good recording in its period to compare with). In 32 of 33, the energy within ±10% of the operation's own spindle speed is more than 6 dB above the good runs of the same group, and in 28 it's more than 10 dB. At first the 200 Hz operations (OP02, OP05, OP07) seemed to change between 100 and 200 Hz, but that was their spindle peak split by the band edge at 200 Hz.
+5. The overall RMS rises much less than the spindle band. OP05 2019-08 gains 18.6 dB at its spindle speed and 0.1 dB in RMS, so an RMS threshold alone would miss it. The one exception is OP09 2019-08, which looks like a normal run on both measures, and I can't tell from the data why it's labelled bad. The model therefore needs a band around each operation's spindle speed, and so one model per operation. `results/figures/m01_bad_vs_good_heatmap.png` shows the differences per band and axis.
 
 ## Data facts
 
