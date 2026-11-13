@@ -11,3 +11,4 @@ date,source,step,split,level,model,features,quantization,SNR,AUROC,PR_AUC,recall
 2026-11-13,03_models.ipynb,"day6 median-of-recordings threshold, 95% limit",recording by period,recording,rms,12,float,,0.8648,,,186.2,5.5,
 2026-11-13,03_models.ipynb,"day6 median-of-recordings threshold, 95% limit",recording by period,window,maha,12,float,,0.9361,0.8621,0.5726,,,
 2026-11-13,03_models.ipynb,"day6 median-of-recordings threshold, 95% limit",recording by period,recording,maha,12,float,,0.8522,,,93.5,5.5,
+2026-11-13,03_models.ipynb,day7 LED after 24 windows above,recording by period,recording,maha,12,float,,0.908,,,6.9,8.45,
