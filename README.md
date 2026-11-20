@@ -43,6 +43,10 @@ I restarted the project on 2026-11-12 with a smaller scope: machine M01 only, an
 8. Mahalanobis now flags 28 of 33 bad test recordings and 3 of 81 good ones, with window AUROC 0.936. The three OP12 bad recordings are caught. The cost is a lower threshold: false alarm starts went from 49.8 to 93.5 per hour of normal signal, so the LED needs its own rule before it goes on the board. OP08 2019-02 (three recordings), OP06 2019-08 and OP09 2019-08 are still missed. The test set had been seen before, so this result isn't fully blind.
 9. On Day 7 the LED got its own rule: it switches on only after the 5 s median score has stayed above the threshold for 24 windows (3.1 s) in a row. I picked 24 on validation recordings: longer holds didn't lower the number of normal runs that switch it on (5 of 88), they only added delay. On the test set, false alarm starts fell from 93.5 to 6.9 per hour, the LED still catches 28 of 33 bad recordings with 3 of 81 good ones, and the median delay grew from 5.5 to 8.4 s. A recording counts as flagged when the LED switches on at all, so the numbers describe what someone at the machine would see.
 
+### Week 2: the firmware
+
+1. `firmware/features.py` computes the 12 features in MicroPython, sample by sample from a ring buffer, with pre-allocated `array` buffers and no numpy. The board isn't connected yet, so `sim/run_sim.py` runs it in the MicroPython Unix port, with a Python copy of emlearn's FFT because emlearn has no build for this Mac. `notebooks/04_simulation.ipynb` compares it with `src/features.py` on a sine, a flat signal and four complete recordings of OP01 and OP05 (701 windows). The largest difference is 3.0e-05 counts for RMS, 0 for peak-to-peak and 6.7e-06 dB for the spindle energy, and the spindle band uses the same FFT bins on both. The Mac calculates in double precision and the ESP32-S3 in single precision, so this has to be checked again on the board.
+
 ## Data facts
 
 "README" here means `data/CNC_Machining/README.md`, and "data" means the checks in the earlier analysis (tag `v0-all-machines`). Page numbers refer to the paper cited below.
