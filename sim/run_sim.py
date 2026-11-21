@@ -45,6 +45,7 @@ def fill(fft, n):
 '''
 
 # Feeds samples through a ring buffer in time order, the way they arrive on the board.
+# With a period as 4th argument it also loads model.bin and writes the score after the 12 features.
 DRIVER = '''
 import sys
 from array import array
@@ -52,8 +53,13 @@ from features import N_AXES, N_FEAT, STEP, WIN, spindle_bins, window_features
 with open(sys.argv[1], 'rb') as f:
     data = array('f', f.read())
 band = spindle_bins(sys.argv[3])
+scoring = len(sys.argv) > 4
+if scoring:
+    import model
+    model.load(sys.argv[3], sys.argv[4])
 rings = [array('f', bytes(4 * WIN)) for _ in range(N_AXES)]
 out = array('f', bytes(4 * N_FEAT))
+s = array('f', [0])
 with open(sys.argv[2], 'wb') as f:
     for i in range(len(data) // N_AXES):
         for a in range(N_AXES):
@@ -62,17 +68,30 @@ with open(sys.argv[2], 'wb') as f:
         if seen >= WIN and (seen - WIN) % STEP == 0:
             window_features(rings, seen & (WIN - 1), band, out)
             f.write(out)
+            if scoring:
+                s[0] = model.score(out)
+                f.write(s)
 '''
 
 
-def run_firmware(x, op):
-    """(n, 3) signal in counts -> (n_windows, 12) features computed by firmware/features.py in MicroPython."""
+def _run(x, args, cols):
+    """Start the driver in MicroPython with firmware/ as working directory, like / on the board."""
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         (tmp / 'emlearn_fft.py').write_text(FFT_STAND_IN)
         (tmp / 'driver.py').write_text(DRIVER)
         np.asarray(x, '<f4').tofile(tmp / 'in.bin')
         env = {**os.environ, 'MICROPYPATH': f'{FIRMWARE}:{tmp}'}
-        subprocess.run(['micropython', '-X', 'heapsize=64M', tmp / 'driver.py', tmp / 'in.bin', tmp / 'out.bin', op],
-                       env=env, check=True)
-        return np.fromfile(tmp / 'out.bin', '<f4').reshape(-1, 12)
+        subprocess.run(['micropython', '-X', 'heapsize=64M', tmp / 'driver.py', tmp / 'in.bin', tmp / 'out.bin', *args],
+                       env=env, cwd=FIRMWARE, check=True)
+        return np.fromfile(tmp / 'out.bin', '<f4').reshape(-1, cols)
+
+
+def run_firmware(x, op):
+    """(n, 3) signal in counts -> (n_windows, 12) features computed by firmware/features.py in MicroPython."""
+    return _run(x, [op], 12)
+
+
+def run_scores(x, op, period):
+    """(n, 3) signal in counts -> (n_windows,) score / threshold from firmware/model.py, with firmware/model.bin."""
+    return _run(x, [op, period], 13)[:, 12]
