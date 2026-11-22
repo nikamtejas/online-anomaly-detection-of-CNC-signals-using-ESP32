@@ -45,7 +45,7 @@ def fill(fft, n):
 '''
 
 # Feeds samples through a ring buffer in time order, the way they arrive on the board.
-# With a period as 4th argument it also loads model.bin and writes the score after the 12 features.
+# With a period as 4th argument it also loads model.bin and writes score, 5 s median and LED after the 12 features.
 DRIVER = '''
 import sys
 from array import array
@@ -59,7 +59,7 @@ if scoring:
     model.load(sys.argv[3], sys.argv[4])
 rings = [array('f', bytes(4 * WIN)) for _ in range(N_AXES)]
 out = array('f', bytes(4 * N_FEAT))
-s = array('f', [0])
+s = array('f', [0, 0, 0])
 with open(sys.argv[2], 'wb') as f:
     for i in range(len(data) // N_AXES):
         for a in range(N_AXES):
@@ -69,7 +69,8 @@ with open(sys.argv[2], 'wb') as f:
             window_features(rings, seen & (WIN - 1), band, out)
             f.write(out)
             if scoring:
-                s[0] = model.score(out)
+                s[2] = model.update(out)
+                s[0], s[1] = model.now, model.med
                 f.write(s)
 '''
 
@@ -94,4 +95,10 @@ def run_firmware(x, op):
 
 def run_scores(x, op, period):
     """(n, 3) signal in counts -> (n_windows,) score / threshold from firmware/model.py, with firmware/model.bin."""
-    return _run(x, [op, period], 13)[:, 12]
+    return _run(x, [op, period], 15)[:, 12]
+
+
+def run_alarm(x, op, period):
+    """(n, 3) signal in counts -> 5 s median score and LED (True/False) per window, from firmware/model.py."""
+    out = _run(x, [op, period], 15)
+    return out[:, 13], out[:, 14] > 0

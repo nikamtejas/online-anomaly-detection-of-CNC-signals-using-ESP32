@@ -6,6 +6,7 @@ from sklearn.covariance import LedoitWolf
 from src.features import is_idle
 
 N_MED = 40  # windows in the 5 s median
+HOLD = 24   # windows above 1 in a row before the LED turns on (notebook 03, Day 7)
 
 
 def split_by_period(idx, seed=0):
@@ -51,3 +52,10 @@ def median_score(s):
 def threshold(m, F, val):
     """Median over validation recordings of their own 99th percentile of the 5 s median score."""
     return np.median([np.nanpercentile(median_score(score(m, running(F[i]), p)), 99) for i, p in zip(val.index, val['period'])])
+
+
+def held(v, H=HOLD):
+    """True where the last H scores were all above 1 (nan counts as below)."""
+    above = (np.nan_to_num(v, nan=0) > 1).astype(int)
+    run = np.convolve(above, np.ones(H, int))[:len(above)]  # windows above among the last H
+    return run >= H
