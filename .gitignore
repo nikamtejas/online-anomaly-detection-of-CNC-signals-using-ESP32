@@ -13,3 +13,6 @@ __pycache__/
 
 # Personal Claude rules, not part of the project
 CLAUDE.local.md
+
+# WiFi login for the ESP32
+firmware/secrets.py

@@ -1,5 +1,6 @@
 """Run firmware/ in the MicroPython Unix port, so notebook 04 can compare it with the laptop."""
 import os
+import socket
 import subprocess
 import tempfile
 from pathlib import Path
@@ -75,6 +76,33 @@ with open(sys.argv[2], 'wb') as f:
 '''
 
 
+# Stand-ins for the board-only modules main.py imports. WiFi is "connected" at once and the LED does nothing,
+# so main.py runs unchanged and serves on 127.0.0.1. Its serial line already says whether the LED is on.
+BOARD_STAND_INS = {
+    'network.py': '''
+STA_IF = 0
+class WLAN:
+    def __init__(self, i): pass
+    def active(self, on): pass
+    def connect(self, ssid, password): pass
+    def isconnected(self): return True
+    def ifconfig(self): return ('127.0.0.1', '', '', '')
+''',
+    'machine.py': '''
+class Pin:
+    def __init__(self, n): pass
+''',
+    'neopixel.py': '''
+class NeoPixel:
+    def __init__(self, pin, n): self.c = [(0, 0, 0)] * n
+    def __setitem__(self, i, c): self.c[i] = c
+    def write(self): pass
+''',
+    'secrets.py': "SSID = PASSWORD = ''\n",
+}
+PORT = 5005  # same as firmware/main.py
+
+
 def _run(x, args, cols):
     """Start the driver in MicroPython with firmware/ as working directory, like / on the board."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -102,3 +130,35 @@ def run_alarm(x, op, period):
     """(n, 3) signal in counts -> 5 s median score and LED (True/False) per window, from firmware/model.py."""
     out = _run(x, [op, period], 15)
     return out[:, 13], out[:, 14] > 0
+
+
+def run_main(recordings, piece=None):
+    """Start firmware/main.py and send it each (x, op, period) over TCP, like tools/stream.py.
+    Returns one (n_windows, 3) array per recording: score / threshold, LED, latency in us. piece: send in pieces of this many bytes."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        (tmp / 'emlearn_fft.py').write_text(FFT_STAND_IN)
+        for name, code in BOARD_STAND_INS.items():
+            (tmp / name).write_text(code)
+        # secrets.py is gitignored, so the stand-in goes first in the path and the real one is never read on the laptop
+        env = {**os.environ, 'MICROPYPATH': f'{tmp}:{FIRMWARE}'}
+        p = subprocess.Popen(['micropython', FIRMWARE / 'main.py'], env=env, cwd=FIRMWARE, stdout=subprocess.PIPE, text=True)
+        try:
+            while not p.stdout.readline().startswith('mem_free'):
+                pass
+            outs = []
+            for x, op, period in recordings:
+                data = f'{op} {period}\n'.encode() + np.asarray(x, '<i2').tobytes()
+                with socket.create_connection(('127.0.0.1', PORT)) as c:
+                    for k in range(0, len(data), piece or len(data)):
+                        c.sendall(data[k:k + (piece or len(data))])
+                rows = []
+                for line in p.stdout:
+                    if line.startswith('done'):
+                        break
+                    rows.append([float(v) for v in line.split(',')])
+                outs.append(np.array(rows).reshape(-1, 3))
+            return outs
+        finally:
+            p.kill()
+            p.wait()
